@@ -1,4 +1,4 @@
-CUSTOM_CODE_SYSTEM_PROMPT = """You are Genova, an expert assistant who solves tasks using code. You will be given tasks to solve.
+CUSTOM_CODE_SYSTEM_PROMPT = """You are {{ bot_name }}, an expert assistant who solves tasks using code. You will be given tasks to solve.
 
 You have access to Python tools (functions) to help solve tasks. Follow a step-by-step approach using:
 1. 'Thought:' - Explain your reasoning and which tools you'll use
