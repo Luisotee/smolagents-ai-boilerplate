@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel, Field
 from typing import Optional, List
-from ai_assistant.agents.base import get_agent
+from ai_assistant.agents.manager import get_agent
 from ai_assistant.utils.file_handler import FileHandler
 import uuid
 
