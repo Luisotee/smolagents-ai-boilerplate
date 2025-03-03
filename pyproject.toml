@@ -9,7 +9,7 @@ readme = "README.md"
 packages = [{include = "ai_assistant", from = "src"}]
 
 [tool.poetry.dependencies]
-python = ">=3.10"
+python = ">=3.10,<4.0"
 fastapi = "^0.115.10"
 uvicorn = "^0.34.0"
 pydantic = "^2.10.6"
@@ -19,6 +19,7 @@ sqlalchemy = "^2.0.38"
 pydantic-settings = "^2.8.1"
 python-multipart = "^0.0.20"
 python-magic = "^0.4.27"
+supabase = "^2.13.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"

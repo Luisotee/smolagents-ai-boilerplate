@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     # Bot Settings
     BOT_NAME: str = os.getenv("BOT_NAME", "AI Assistant")
 
+    # Supabase Settings
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
+    SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "")
+    SUPABASE_USERS_TABLE: str = os.getenv("SUPABASE_USERS_TABLE", "users")
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

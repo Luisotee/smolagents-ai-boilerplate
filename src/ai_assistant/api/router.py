@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from ai_assistant.agents.manager import get_agent
 from ai_assistant.utils.file_handler import FileHandler
+from ai_assistant.database.supabase_client import supabase
 import uuid
 
 router = APIRouter(prefix="/api", tags=["AI Assistant"])
@@ -45,11 +46,15 @@ class Message(BaseModel):
 
 class Response(BaseModel):
     content: str = Field(..., description="The AI assistant's response message")
+    conversation_id: str = Field(
+        ..., description="The conversation ID for this interaction"
+    )
 
     model_config = {
         "json_schema_extra": {
             "example": {
-                "content": "Artificial intelligence (AI) refers to the simulation of human intelligence processes by machines..."
+                "content": "Artificial intelligence (AI) refers to the simulation of human intelligence processes by machines...",
+                "conversation_id": "conv-123456",
             }
         }
     }
@@ -102,11 +107,41 @@ async def chat(
             attachment_paths=attachment_paths,
         )
 
+        # Get conversation history to provide context
+        history = supabase.get_conversation_history(
+            platform=platform,
+            platform_user_id=platform_user_id,
+            conversation_id=conversation_id,
+            limit=5,  # Consider last 5 messages for context
+        )
+
+        # Format history for context if any exists
+        context = ""
+        if history:
+            context = "Previous conversation:\n"
+            for i, msg in enumerate(reversed(history)):  # Oldest first
+                context += f"User: {msg['user_message']}\n"
+                context += f"Assistant: {msg['assistant_response']}\n"
+            context += "\nCurrent message:\n"
+
+        # Add context to the message content if we have history
+        prompt = f"{context}{message.content}" if context else message.content
+
         # Process message
         agent = get_agent()
-        response = agent.run(
-            message.content,
+        response_content = agent.run(prompt)
+
+        # Store message and response in database
+        supabase.add_message_to_history(
+            platform=platform,
+            platform_user_id=platform_user_id,
+            message_content=content,
+            response_content=response_content,
+            conversation_id=conversation_id,
         )
-        return Response(content=response)
+
+        return Response(
+            content=response_content, conversation_id=conversation_id
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
