@@ -125,7 +125,11 @@ async def chat(
             context += "\nCurrent message:\n"
 
         # Add context to the message content if we have history
-        prompt = f"{context}{message.content}" if context else message.content
+        prompt = (
+            f"{context}\nUser: {message.content}"
+            if context
+            else message.content
+        )
 
         # Process message
         agent = get_agent()
