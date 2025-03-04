@@ -4,6 +4,7 @@ from typing import Optional, List
 from ai_assistant.agents.manager import get_agent
 from ai_assistant.utils.file_handler import FileHandler
 from ai_assistant.database.supabase_client import supabase
+from ai_assistant.config.settings import settings
 import uuid
 
 router = APIRouter(prefix="/api", tags=["AI Assistant"])
@@ -107,12 +108,12 @@ async def chat(
             attachment_paths=attachment_paths,
         )
 
-        # Get conversation history to provide context
+        # Get conversation history to provide context, using limit from settings
         history = supabase.get_conversation_history(
             platform=platform,
             platform_user_id=platform_user_id,
             conversation_id=conversation_id,
-            limit=5,  # Consider last 5 messages for context
+            limit=settings.MESSAGE_HISTORY_LIMIT,  # Use the configured limit
         )
 
         # Format history for context if any exists

@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     # Bot Settings
     BOT_NAME: str = os.getenv("BOT_NAME", "AI Assistant")
 
+    # History Settings
+    MESSAGE_HISTORY_LIMIT: int = int(os.getenv("MESSAGE_HISTORY_LIMIT", "5"))
+
     # Supabase Settings
     SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
     SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "")
