@@ -1,4 +1,5 @@
 from ai_assistant.prompts.manager import CUSTOM_CODE_SYSTEM_PROMPT
+from ai_assistant.prompts.formatting import get_formatting_guidelines
 from smolagents import (
     CodeAgent,
     LiteLLMModel,
@@ -19,6 +20,9 @@ model = LiteLLMModel(
 empty_tools = {}
 empty_managed_agents = {"web_agent": web_agent}
 
+# Get default formatting guidelines (WhatsApp)
+formatting_guidelines = get_formatting_guidelines("whatsapp")
+
 # Populate the template with the bot name and empty tools/managed_agents
 # (they will be properly populated by CodeAgent when initializing system prompt)
 populated_system_prompt = populate_template(
@@ -28,6 +32,7 @@ populated_system_prompt = populate_template(
         "authorized_imports": str(["os", "re", "json", "time"]),
         "tools": empty_tools,
         "managed_agents": empty_managed_agents,
+        "formatting_guidelines": formatting_guidelines,
     },
 )
 
@@ -64,6 +69,16 @@ manager_agent = CodeAgent(
 )
 
 
-def get_agent():
-    """Returns the manager agent to be used by the API."""
+def get_agent(platform: str = "whatsapp"):
+    """
+    Returns the manager agent to be used by the API.
+
+    Args:
+        platform: The platform name (e.g., "whatsapp", "telegram")
+
+    Returns:
+        CodeAgent: The configured manager agent with appropriate formatting
+    """
+    # If we want to dynamically update formatting based on platform
+    # we would need to recreate the agent here with updated formatting
     return manager_agent

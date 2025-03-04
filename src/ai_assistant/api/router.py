@@ -133,7 +133,9 @@ async def chat(
         )
 
         # Process message
-        agent = get_agent()
+        agent = get_agent(
+            platform
+        )  # Pass the platform to get platform-specific formatting
         response_content = agent.run(prompt)
 
         # Store message and response in database
