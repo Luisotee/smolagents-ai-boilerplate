@@ -7,6 +7,7 @@ from smolagents import (
 from smolagents.agents import populate_template
 from ai_assistant.config.settings import settings
 from ai_assistant.agents.web_agent import web_agent
+from ai_assistant.agents.clinic_info_agent import clinic_info_agent
 import os
 
 # Create the model instance using settings from config
@@ -18,7 +19,10 @@ model = LiteLLMModel(
 
 # Define the empty tools dictionary - needed for the template
 empty_tools = {}
-empty_managed_agents = {"web_agent": web_agent}
+empty_managed_agents = {
+    "web_agent": web_agent,
+    "clinic_info": clinic_info_agent,
+}
 
 # Get default formatting guidelines (WhatsApp)
 formatting_guidelines = get_formatting_guidelines("whatsapp")
@@ -62,7 +66,9 @@ custom_prompt_templates = {
 manager_agent = CodeAgent(
     tools=[],
     model=model,
-    managed_agents=[web_agent],
+    managed_agents=[
+        clinic_info_agent,
+    ],  # Make sure both agents are included
     max_steps=3,
     prompt_templates=custom_prompt_templates,
     additional_authorized_imports=["os", "re", "json", "time"],
