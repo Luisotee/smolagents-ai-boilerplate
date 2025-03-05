@@ -5,23 +5,27 @@ from smolagents import (
 from smolagents.agents import populate_template
 from ai_assistant.config.settings import settings
 from ai_assistant.prompts.clinic_info import CLINIC_INFO_SYSTEM_PROMPT
-from ai_assistant.prompts.formatting import get_formatting_guidelines
 
-# Create the model instance
+# Create the model instance using OpenRouter
 model = LiteLLMModel(
-    model_id="azure/gpt-4o-mini",
-    api_key=settings.AZURE_OPENAI_API_KEY,
-    api_base=settings.AZURE_OPENAI_ENDPOINT,
+    model_id="openrouter/deepseek/deepseek-chat:free",
+    num_ctx=4096 * 4,  # Increase the context size to 16KB
+    max_tokens=8000,
+    api_key=settings.OPEN_ROUTER_API_KEY,  # Use the OpenRouter API key
 )
 
-# Get default formatting guidelines (WhatsApp)
-formatting_guidelines = get_formatting_guidelines("whatsapp")
+# Define empty tools and managed agents dictionaries for template
+empty_tools = {}
+empty_managed_agents = {}
 
-# Populate the template with formatting guidelines
+# Populate the template with empty tools/managed_agents
 populated_system_prompt = populate_template(
     CLINIC_INFO_SYSTEM_PROMPT,
     variables={
-        "formatting_guidelines": formatting_guidelines,
+        "formatting_guidelines": "",  # Empty string instead of formatting guidelines
+        "tools": empty_tools,
+        "managed_agents": empty_managed_agents,
+        "authorized_imports": str(["os", "re", "json", "time"]),
     },
 )
 
@@ -54,6 +58,7 @@ clinic_info_agent = CodeAgent(
     name="clinic_info",
     description="Provides accurate information about Clínica Bella's services, procedures, location, and policies.",
     prompt_templates=custom_prompt_templates,
+    max_steps=2,
 )
 
 

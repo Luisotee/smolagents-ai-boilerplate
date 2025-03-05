@@ -6,21 +6,20 @@ from smolagents import (
 )
 from smolagents.agents import populate_template
 from ai_assistant.config.settings import settings
-from ai_assistant.agents.web_agent import web_agent
 from ai_assistant.agents.clinic_info_agent import clinic_info_agent
 import os
 
 # Create the model instance using settings from config
 model = LiteLLMModel(
-    model_id="azure/gpt-4o-mini",
-    api_key=settings.AZURE_OPENAI_API_KEY,
-    api_base=settings.AZURE_OPENAI_ENDPOINT,
+    model_id="openrouter/deepseek/deepseek-chat:free",
+    num_ctx=4096 * 4,  # Increase the context size to 16KB
+    max_tokens=8000,
+    api_key=settings.OPEN_ROUTER_API_KEY,  # Use the OpenRouter API key
 )
 
 # Define the empty tools dictionary - needed for the template
 empty_tools = {}
 empty_managed_agents = {
-    "web_agent": web_agent,
     "clinic_info": clinic_info_agent,
 }
 
@@ -68,8 +67,8 @@ manager_agent = CodeAgent(
     model=model,
     managed_agents=[
         clinic_info_agent,
-    ],  # Make sure both agents are included
-    max_steps=3,
+    ],
+    max_steps=2,
     prompt_templates=custom_prompt_templates,
     additional_authorized_imports=["os", "re", "json", "time"],
 )

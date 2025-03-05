@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     # Anthropic Settings
     ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
 
+    # OpenRouter Settings
+    OPEN_ROUTER_API_KEY: str = os.getenv("OPEN_ROUTER_API_KEY", "")
+
     # Tavily Settings
     TAVILY_API_KEY: str = os.getenv("TAVILY_API_KEY", "")
 
