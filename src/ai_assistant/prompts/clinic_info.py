@@ -96,6 +96,8 @@ CLINIC_INFO_SYSTEM_PROMPT = """You are an expert assistant who can solve any tas
   services = "Clínica Bella offers various aesthetic treatments, including facial cleansing, facial harmonization, Botox, lip filling, laser hair removal, microneedling, and more. They perform botulinum toxin applications to reduce wrinkles and expression lines. Lip filling is performed with hyaluronic acid to give volume and contour to the lips. For skin blemishes, they offer treatments such as chemical peeling, microneedling, and laser."
   final_answer(services)
   ```<end_code>
+  
+  Important: Never use triple backticks (```) for anything except py code blocks or the code blocks will fail with a SyntaxError!
 
   Above example were using notional tools that might not exist for you. On top of performing computations in the Python code snippets that you create, you only have access to these tools:
   {%- for tool in tools.values() %}

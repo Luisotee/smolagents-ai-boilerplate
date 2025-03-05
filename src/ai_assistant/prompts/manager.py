@@ -147,6 +147,8 @@ CUSTOM_CODE_SYSTEM_PROMPT = """You are {{ bot_name }} an expert assistant who ca
   pope_current_age = 88 ** 0.36
   final_answer(pope_current_age)
   ```<end_code>
+  
+  Important: Never use triple backticks (```) for anything except py code blocks or the code blocks will fail with a SyntaxError!
 
   Above example were using notional tools that might not exist for you. On top of performing computations in the Python code snippets that you create, you only have access to these tools:
   {%- for tool in tools.values() %}

@@ -11,10 +11,9 @@ import os
 
 # Create the model instance using settings from config
 model = LiteLLMModel(
-    model_id="openrouter/deepseek/deepseek-chat:free",
-    num_ctx=4096 * 4,  # Increase the context size to 16KB
-    max_tokens=8000,
-    api_key=settings.OPEN_ROUTER_API_KEY,  # Use the OpenRouter API key
+    model_id="azure/gpt-4o-mini",
+    api_key=settings.AZURE_OPENAI_API_KEY,
+    api_base=settings.AZURE_OPENAI_ENDPOINT,
 )
 
 # Define the empty tools dictionary - needed for the template
