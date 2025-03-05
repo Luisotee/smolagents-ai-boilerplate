@@ -19,7 +19,6 @@ clinic_info_agent = CodeAgent(
     name="clinic_info",
     description="Provides information about Bella clinic.",
     # prompt_templates=custom_prompt_templates,
-    max_steps=3,
 )
 
 
