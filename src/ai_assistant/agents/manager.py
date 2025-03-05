@@ -11,9 +11,8 @@ import os
 
 # Create the model instance using settings from config
 model = LiteLLMModel(
-    model_id="azure/gpt-4o-mini",
-    api_key=settings.AZURE_OPENAI_API_KEY,
-    api_base=settings.AZURE_OPENAI_ENDPOINT,
+    model_id="openrouter/deepseek/deepseek-chat:free",
+    api_key=settings.OPEN_ROUTER_API_KEY,  # Use the OpenRouter API key
 )
 
 # Define the empty tools dictionary - needed for the template
@@ -67,7 +66,7 @@ manager_agent = CodeAgent(
     managed_agents=[
         clinic_info_agent,
     ],
-    max_steps=2,
+    max_steps=3,
     prompt_templates=custom_prompt_templates,
     additional_authorized_imports=["os", "re", "json", "time"],
 )

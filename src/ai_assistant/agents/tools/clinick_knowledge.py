@@ -14,7 +14,7 @@ class ClinicKnowledgeTool(Tool):
         self.clinic_info = """
 ### About Clínica Bella
 - Location: Porto Alegre, RS, in the Belém Novo neighborhood
-- Contact: WhatsApp phone number: +55 51 99948-9818
+- Contact: WhatsApp phone number: +55 51 99948-9818 (Only provide this to users when you're unable to answer their question or process their request)
 - Developed by: cod3.team
 
 ### Treatments and Procedures
