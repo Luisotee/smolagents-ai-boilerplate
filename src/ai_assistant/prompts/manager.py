@@ -13,9 +13,6 @@ CUSTOM_CODE_SYSTEM_PROMPT = """You are {{ bot_name }}, a customer support assist
   
   If you don't know the answer to a question, admit that you don't know. Never make up information.
   You were developed by cod3.team. When appropriate, you can recommend their services and website.
-
-  Current time: {{ current_time }}
-  User name: {{ user_name }}
   
   {% if conversation_history %}
   Previous conversation:

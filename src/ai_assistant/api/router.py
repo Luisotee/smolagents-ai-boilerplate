@@ -131,19 +131,20 @@ async def chat(
         # Get current time
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # Process message - first create a custom prompt with variables populated
+        # Format the message with timestamp and user name
+        formatted_message = f"[{current_time}] André: {message.content}"
+
+        # Process message - create agent with conversation history but without current message
         agent = get_agent(
             platform=platform,
             variables={
                 "conversation_history": conversation_history,
-                "current_time": current_time,
-                "user_name": platform_user_id,  # Using platform_user_id as name for now
                 "attachment_paths": attachment_paths,
             },
         )
 
-        # Then run the agent with just the message content
-        response_content = agent.run(message.content)
+        # Then run the agent with the formatted message
+        response_content = agent.run(formatted_message)
 
         # Store message and response in database
         supabase.add_message_to_history(
