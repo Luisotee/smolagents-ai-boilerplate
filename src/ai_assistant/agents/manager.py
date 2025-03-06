@@ -8,6 +8,7 @@ from smolagents.agents import populate_template
 from ai_assistant.config.settings import settings
 from ai_assistant.agents.clinic_info_agent import clinic_info_agent
 import os
+import datetime
 
 # Create the model instance using settings from config
 model = LiteLLMModel(
@@ -30,10 +31,13 @@ populated_system_prompt = populate_template(
     CUSTOM_CODE_SYSTEM_PROMPT,
     variables={
         "bot_name": settings.BOT_NAME,
-        "authorized_imports": str(["os", "re", "json", "time"]),
+        "authorized_imports": str(["os", "re", "json", "time", "datetime"]),
         "tools": empty_tools,
         "managed_agents": empty_managed_agents,
         "formatting_guidelines": formatting_guidelines,
+        "conversation_history": [],
+        "current_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "user_name": "André",
     },
 )
 
@@ -66,9 +70,8 @@ manager_agent = CodeAgent(
     managed_agents=[
         clinic_info_agent,
     ],
-    max_steps=3,
     prompt_templates=custom_prompt_templates,
-    additional_authorized_imports=["os", "re", "json", "time"],
+    additional_authorized_imports=["os", "re", "json", "time", "datetime"],
 )
 
 
