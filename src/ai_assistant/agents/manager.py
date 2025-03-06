@@ -25,66 +25,74 @@ empty_managed_agents = {
 # Get default formatting guidelines (WhatsApp)
 formatting_guidelines = get_formatting_guidelines("whatsapp")
 
-# Populate the template with the bot name and empty tools/managed_agents
-# (they will be properly populated by CodeAgent when initializing system prompt)
-populated_system_prompt = populate_template(
-    CUSTOM_CODE_SYSTEM_PROMPT,
-    variables={
-        "bot_name": settings.BOT_NAME,
-        "authorized_imports": str(["os", "re", "json", "time", "datetime"]),
-        "tools": empty_tools,
-        "managed_agents": empty_managed_agents,
-        "formatting_guidelines": formatting_guidelines,
-        "conversation_history": [],
-        "current_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "user_name": "André",
-    },
-)
 
-# Create proper prompt templates dictionary format expected by CodeAgent
-custom_prompt_templates = {
-    "system_prompt": populated_system_prompt,
-    # Include empty default values for required nested dictionaries
-    "planning": {
-        "initial_facts": "",
-        "initial_plan": "",
-        "update_facts_pre_messages": "",
-        "update_facts_post_messages": "",
-        "update_plan_pre_messages": "",
-        "update_plan_post_messages": "",
-    },
-    "managed_agent": {
-        "task": "",
-        "report": "",
-    },
-    "final_answer": {
-        "pre_messages": "",
-        "post_messages": "",
-    },
-}
-
-# Create a manager agent that coordinates other agents
-manager_agent = CodeAgent(
-    tools=[],
-    model=model,
-    managed_agents=[
-        clinic_info_agent,
-    ],
-    prompt_templates=custom_prompt_templates,
-    additional_authorized_imports=["os", "re", "json", "time", "datetime"],
-)
-
-
-def get_agent(platform: str = "whatsapp"):
+def get_agent(platform: str = "whatsapp", variables: dict = None):
     """
     Returns the manager agent to be used by the API.
 
     Args:
         platform: The platform name (e.g., "whatsapp", "telegram")
+        variables: Optional variables to populate the template
 
     Returns:
         CodeAgent: The configured manager agent with appropriate formatting
     """
-    # If we want to dynamically update formatting based on platform
-    # we would need to recreate the agent here with updated formatting
-    return manager_agent
+    # Get platform-specific formatting if needed
+    platform_formatting = get_formatting_guidelines(platform)
+
+    # Create a base dictionary of variables
+    template_variables = {
+        "bot_name": settings.BOT_NAME,
+        "authorized_imports": str(["os", "re", "json", "time", "datetime"]),
+        "tools": empty_tools,
+        "managed_agents": empty_managed_agents,
+        "formatting_guidelines": platform_formatting,
+        "conversation_history": [],
+        "current_time": "",
+        "user_name": "Client",
+    }
+
+    # Update with custom variables if provided
+    if variables:
+        template_variables.update(variables)
+
+    # Populate the template with the bot name and empty tools/managed_agents
+    populated_system_prompt = populate_template(
+        CUSTOM_CODE_SYSTEM_PROMPT,
+        variables=template_variables,
+    )
+
+    # Create proper prompt templates dictionary format expected by CodeAgent
+    custom_prompt_templates = {
+        "system_prompt": populated_system_prompt,
+        # Include empty default values for required nested dictionaries
+        "planning": {
+            "initial_facts": "",
+            "initial_plan": "",
+            "update_facts_pre_messages": "",
+            "update_facts_post_messages": "",
+            "update_plan_pre_messages": "",
+            "update_plan_post_messages": "",
+        },
+        "managed_agent": {
+            "task": "",
+            "report": "",
+        },
+        "final_answer": {
+            "pre_messages": "",
+            "post_messages": "",
+        },
+    }
+
+    # Create a manager agent that coordinates other agents
+    platform_agent = CodeAgent(
+        tools=[],
+        model=model,
+        managed_agents=[
+            clinic_info_agent,
+        ],
+        prompt_templates=custom_prompt_templates,
+        additional_authorized_imports=["os", "re", "json", "time", "datetime"],
+    )
+
+    return platform_agent

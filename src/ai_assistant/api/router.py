@@ -6,6 +6,7 @@ from ai_assistant.utils.file_handler import FileHandler
 from ai_assistant.database.supabase_client import supabase
 from ai_assistant.config.settings import settings
 import uuid
+import datetime
 
 router = APIRouter(prefix="/api", tags=["AI Assistant"])
 
@@ -116,27 +117,33 @@ async def chat(
             limit=settings.MESSAGE_HISTORY_LIMIT,  # Use the configured limit
         )
 
-        # Format history for context if any exists
-        context = ""
+        # Format history as structured data for the template
+        conversation_history = []
         if history:
-            context = "Previous conversation:\n"
-            for i, msg in enumerate(reversed(history)):  # Oldest first
-                context += f"User: {msg['user_message']}\n"
-                context += f"Assistant: {msg['assistant_response']}\n"
-            context += "\nCurrent message:\n"
+            for msg in reversed(history):  # Oldest first
+                conversation_history.append(
+                    {
+                        "user": msg["user_message"],
+                        "assistant": msg["assistant_response"],
+                    }
+                )
 
-        # Add context to the message content if we have history
-        prompt = (
-            f"{context}\nUser: {message.content}"
-            if context
-            else message.content
+        # Get current time
+        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Process message - first create a custom prompt with variables populated
+        agent = get_agent(
+            platform=platform,
+            variables={
+                "conversation_history": conversation_history,
+                "current_time": current_time,
+                "user_name": platform_user_id,  # Using platform_user_id as name for now
+                "attachment_paths": attachment_paths,
+            },
         )
 
-        # Process message
-        agent = get_agent(
-            platform
-        )  # Pass the platform to get platform-specific formatting
-        response_content = agent.run(prompt)
+        # Then run the agent with just the message content
+        response_content = agent.run(message.content)
 
         # Store message and response in database
         supabase.add_message_to_history(
