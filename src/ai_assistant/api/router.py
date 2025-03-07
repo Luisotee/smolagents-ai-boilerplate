@@ -1,3 +1,5 @@
+from ai_assistant.prompts.formatting import get_formatting_guidelines
+from ai_assistant.prompts.manager import CUSTOM_CODE_SYSTEM_PROMPT
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel, Field
 from typing import Optional, List
@@ -7,6 +9,8 @@ from ai_assistant.database.supabase_client import supabase
 from ai_assistant.config.settings import settings
 import uuid
 import datetime
+from smolagents.local_python_executor import BASE_BUILTIN_MODULES
+from smolagents.agents import populate_template
 
 router = APIRouter(prefix="/api", tags=["AI Assistant"])
 
@@ -33,33 +37,12 @@ class Message(BaseModel):
         description="List of paths to attached files",
     )
 
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "content": "What can you tell me about artificial intelligence?",
-                "conversation_id": "conv-123456",
-                "platform": "telegram",
-                "platform_user_id": "12345678",
-                "attachment_paths": [],
-            }
-        }
-    }
-
 
 class Response(BaseModel):
     content: str = Field(..., description="The AI assistant's response message")
     conversation_id: str = Field(
         ..., description="The conversation ID for this interaction"
     )
-
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "content": "Artificial intelligence (AI) refers to the simulation of human intelligence processes by machines...",
-                "conversation_id": "conv-123456",
-            }
-        }
-    }
 
 
 @router.post(
@@ -134,7 +117,7 @@ async def chat(
         # Format the message with timestamp and user name
         formatted_message = f"[{current_time}] André: {message.content}"
 
-        # Process message - create agent with conversation history but without current message
+        # Process message - create agent with conversation history and attachments
         agent = get_agent(
             platform=platform,
             variables={
@@ -142,6 +125,21 @@ async def chat(
                 "attachment_paths": attachment_paths,
             },
         )
+
+        # Set up the custom prompt with all required variables
+        agent.prompt_templates["system_prompt"] = populate_template(
+            CUSTOM_CODE_SYSTEM_PROMPT,
+            variables={
+                "conversation_history": conversation_history,
+                "bot_name": settings.BOT_NAME,
+                "formatting_guidelines": get_formatting_guidelines(platform),
+                "tools": agent.tools,  # Changed from agent.tools_dict to agent.tools
+                "authorized_imports": BASE_BUILTIN_MODULES,  # Add the authorized imports
+                "managed_agents": {},  # Add empty managed_agents if needed by template
+            },
+        )
+
+        # print(agent.prompt_templates["planning"])
 
         # Then run the agent with the formatted message
         response_content = agent.run(formatted_message)

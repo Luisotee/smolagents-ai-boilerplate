@@ -4,7 +4,7 @@ from smolagents import (
 )
 from smolagents.agents import populate_template
 from ai_assistant.config.settings import settings
-from ai_assistant.agents.tools.clinick_knowledge import ClinicKnowledgeTool
+from ai_assistant.agents.tools.clinic_knowledge import ClinicKnowledgeTool
 
 # Create the model instance using OpenRouter
 model = LiteLLMModel(
