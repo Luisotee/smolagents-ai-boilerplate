@@ -1,10 +1,13 @@
-from ai_assistant.prompts.manager import CUSTOM_CODE_SYSTEM_PROMPT
 from ai_assistant.prompts.formatting import get_formatting_guidelines
 from smolagents import CodeAgent, LiteLLMModel
 from ai_assistant.config.settings import settings
-from ai_assistant.agents.tools.clinic_knowledge import ClinicKnowledgeTool
-from smolagents.local_python_executor import BASE_BUILTIN_MODULES
-from smolagents.agents import populate_template
+from ai_assistant.agents.tools import (
+    ClinicGeneralInfoTool,
+    ClinicPricingTool,
+    ClinicServicesTool,
+    ClinicStaffTool,
+    ClinicAppointmentsTool,
+)
 
 # Create the model instance using settings from config
 model = LiteLLMModel(
@@ -28,11 +31,17 @@ def get_agent(platform: str = "whatsapp", variables: dict = None):
     # Get formatting guidelines for the specific platform
     formatting_guidelines = get_formatting_guidelines(platform)
 
-    # Create a manager agent with the clinic knowledge tool
+    # Create a manager agent with all clinic tools
     manager_agent = CodeAgent(
-        tools=[ClinicKnowledgeTool()],
+        tools=[
+            ClinicGeneralInfoTool(),
+            ClinicPricingTool(),
+            ClinicServicesTool(),
+            ClinicStaffTool(),
+            ClinicAppointmentsTool(),
+        ],
         model=model,
-        max_steps=3,
+        max_steps=7,
     )
 
     return manager_agent
