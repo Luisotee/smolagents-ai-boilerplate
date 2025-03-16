@@ -16,6 +16,11 @@ model = LiteLLMModel(
     api_base=settings.AZURE_OPENAI_ENDPOINT,
 )
 
+""" model = LiteLLMModel(
+    model_id="openrouter/deepseek/deepseek-chat:free",
+    api_key=settings.OPEN_ROUTER_API_KEY,  # Use the OpenRouter API key
+) """
+
 
 def get_agent(platform: str = "whatsapp", variables: dict = None):
     """
