@@ -8,7 +8,9 @@ load_dotenv()
 class Settings(BaseSettings):
     # API Settings
     HOST: str = os.getenv("HOST", "0.0.0.0")
-    PORT: int = int(os.getenv("PORT", "8000"))
+    PORT: int = int(
+        os.getenv("PORT", "3000")
+    )  # Changed to use env var with default
     DEBUG: bool = os.getenv("DEBUG", "False").lower() in ("true", "1", "t")
 
     # Azure OpenAI Settings

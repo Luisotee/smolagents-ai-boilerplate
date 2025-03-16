@@ -82,6 +82,14 @@ async def health_check():
 
 
 def main():
+    print(f"\n🚀 Server starting on http://{settings.HOST}:{settings.PORT}")
+    print(
+        f"📚 Documentation available at http://{settings.HOST}:{settings.PORT}/docs"
+    )
+    print(
+        f"📘 Alternative documentation at http://{settings.HOST}:{settings.PORT}/redoc\n"
+    )
+
     uvicorn.run(
         "ai_assistant.main:app",
         host=settings.HOST,
