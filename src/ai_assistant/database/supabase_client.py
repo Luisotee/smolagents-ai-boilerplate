@@ -12,20 +12,28 @@ class SupabaseClient:
             settings.SUPABASE_URL, settings.SUPABASE_KEY
         )
         self.users_table = settings.SUPABASE_USERS_TABLE
-        self.messages_table = "messages"  # New table for messages
+        self.messages_table = "messages"  # Table for messages
 
     def get_user(self, platform: str, platform_user_id: str) -> Optional[Dict]:
         """Get user by platform and platform_user_id"""
-        response = (
-            self.client.table(self.users_table)
-            .select("*")
-            .eq(f"{platform}_id", platform_user_id)
-            .execute()
-        )
+        # Use the correct column name based on platform
+        column_name = f"{platform}_id"
 
-        if response.data:
-            return response.data[0]
-        return None
+        try:
+            response = (
+                self.client.table(self.users_table)
+                .select("*")
+                .eq(column_name, platform_user_id)
+                .execute()
+            )
+
+            if response.data:
+                return response.data[0]
+            return None
+        except Exception as e:
+            print(f"Error retrieving user: {e}")
+            # If there's an error, we'll return None so a new user can be created
+            return None
 
     def create_user(
         self,
@@ -87,27 +95,25 @@ class SupabaseClient:
 
         return user
 
-    def store_message(
-        self,
-        user_id: str,
-        message_content: str,
-        is_from_user: bool = True,
-        conversation_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> Dict:
-        """Store a message in the messages table"""
-        content = {
-            "text": message_content,
-            "timestamp": datetime.now().isoformat(),
-            "from_user": is_from_user,
-            "conversation_id": conversation_id,
+    def get_user_message_record(self, user_id: str) -> Optional[Dict]:
+        """Get the user's message record or None if it doesn't exist"""
+        response = (
+            self.client.table(self.messages_table)
+            .select("*")
+            .eq("user_id", user_id)
+            .execute()
+        )
+
+        if response.data:
+            return response.data[0]
+        return None
+
+    def create_message_record(self, user_id: str) -> Dict:
+        """Create a new message record for user with empty content"""
+        message_data = {
+            "user_id": user_id,
+            "content": [],  # Change to an empty array instead of nested structure
         }
-
-        # Add any additional metadata
-        if metadata:
-            content.update(metadata)
-
-        message_data = {"user_id": user_id, "content": content}
 
         response = (
             self.client.table(self.messages_table)
@@ -117,66 +123,140 @@ class SupabaseClient:
 
         return response.data[0]
 
-    def add_conversation_exchange(
+    def get_or_create_message_record(self, user_id: str) -> Dict:
+        """Get or create message record for user"""
+        record = self.get_user_message_record(user_id)
+
+        if not record:
+            record = self.create_message_record(user_id)
+
+        return record
+
+    def add_message_to_history(
         self,
         platform: str,
         platform_user_id: str,
-        user_message: str,
-        assistant_response: str,
-        conversation_id: Optional[str] = None,
+        message_content: str,
+        response_content: str,
+        conversation_id: Optional[
+            str
+        ] = None,  # We'll keep this param for backward compatibility
     ) -> Dict[str, Any]:
-        """Add a complete exchange (user message and assistant response)"""
-        # Get or create the user
-        user = self.get_or_create_user(platform, platform_user_id)
-        user_id = user["id"]
+        """
+        Store both user message and assistant response in the user's message history.
+        This implementation keeps one row per user with a flat array of messages in the JSONB column.
 
-        # Store the user message
-        self.store_message(
-            user_id=user_id,
-            message_content=user_message,
-            is_from_user=True,
-            conversation_id=conversation_id,
-        )
+        Args:
+            platform: Platform identifier (e.g., "whatsapp", "telegram")
+            platform_user_id: User ID from the platform
+            message_content: Content of the user message
+            response_content: Content of the assistant response
+            conversation_id: Optional conversation identifier (not used in flat structure)
 
-        # Store the assistant response
-        response_data = self.store_message(
-            user_id=user_id,
-            message_content=assistant_response,
-            is_from_user=False,
-            conversation_id=conversation_id,
-        )
+        Returns:
+            Dict containing the recorded exchange information
+        """
+        try:
+            # Get or create the user
+            user = self.get_or_create_user(platform, platform_user_id)
+            user_id = user["id"]
 
-        return {
-            "user": user,
-            "exchange_recorded": True,
-            "response_id": response_data["id"],
-        }
+            # Get or create the message record
+            message_record = self.get_or_create_message_record(user_id)
+
+            # Prepare new message exchange
+            timestamp = datetime.now().isoformat()
+            new_exchange = {
+                "user_message": message_content,
+                "assistant_response": response_content,
+                "timestamp": timestamp,
+            }
+
+            # Get existing content - either an array or initialize as empty array
+            content = message_record.get("content", [])
+            if not isinstance(content, list):
+                # Handle case where content might be in old format
+                content = []
+
+            # Add new exchange to the array
+            content.append(new_exchange)
+
+            # Update the message record
+            updated_data = {"content": content}
+            response = (
+                self.client.table(self.messages_table)
+                .update(updated_data)
+                .eq("id", message_record["id"])
+                .execute()
+            )
+
+            return {
+                "user": user,
+                "conversation_id": "default",  # Always return default
+                "timestamp": timestamp,
+                "success": True,
+            }
+        except Exception as e:
+            print(f"Error adding message to history: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+            }
 
     def get_conversation_history(
         self,
         user_id: str,
-        conversation_id: Optional[str] = None,
+        conversation_id: Optional[
+            str
+        ] = None,  # We'll keep this param for backward compatibility
         limit: int = 10,
     ) -> List[Dict]:
-        """Get conversation history for a user"""
-        query = (
-            self.client.table(self.messages_table)
-            .select("*")
-            .eq("user_id", user_id)
-            .order("created_at", desc=True)
-            .limit(limit)
-        )
+        """
+        Get conversation history for a user.
 
-        # Filter by conversation_id if provided
-        if conversation_id:
-            # Since conversation_id is inside JSONB, we need to use contains operator
-            query = query.filter(
-                "content->conversation_id", "eq", conversation_id
-            )
+        Args:
+            user_id: The user ID
+            conversation_id: Optional conversation ID (not used in flat structure)
+            limit: Maximum number of exchanges to return
 
-        response = query.execute()
+        Returns:
+            List of message exchanges (user message and assistant response pairs)
+        """
+        try:
+            # Get the message record
+            message_record = self.get_user_message_record(user_id)
 
-        return response.data if response.data else []
+            if not message_record or "content" not in message_record:
+                return []
+
+            content = message_record.get("content", [])
+
+            # Handle if content is not an array (old format)
+            if not isinstance(content, list):
+                # Try to extract from old format if possible
+                try:
+                    conversations = content.get("conversations", {})
+                    all_exchanges = []
+                    for exchanges in conversations.values():
+                        all_exchanges.extend(exchanges)
+                    # Sort by timestamp (most recent first)
+                    all_exchanges.sort(
+                        key=lambda x: x.get("timestamp", ""), reverse=True
+                    )
+                    return all_exchanges[:limit]
+                except:
+                    return []
+
+            # Return the most recent exchanges up to the limit
+            # Sort by timestamp (most recent first)
+            content.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+
+            # Return the limited number of messages
+            return content[:limit]
+
+        except Exception as e:
+            print(f"Error getting conversation history: {e}")
+            return []
 
     def get_user_by_platform_id(
         self, platform: str, platform_user_id: str

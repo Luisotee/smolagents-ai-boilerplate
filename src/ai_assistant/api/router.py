@@ -93,21 +93,35 @@ async def chat(
         )
 
         # Get conversation history to provide context, using limit from settings
-        history = supabase.get_conversation_history(
-            platform=platform,
-            platform_user_id=platform_user_id,
-            conversation_id=conversation_id,
-            limit=settings.MESSAGE_HISTORY_LIMIT,  # Use the configured limit
-        )
+        try:
+            user = supabase.get_user(platform, platform_user_id)
+
+            # If user doesn't exist, create a new user
+            if not user:
+                user = supabase.get_or_create_user(platform, platform_user_id)
+
+            history = []
+            if user:
+                history = supabase.get_conversation_history(
+                    user_id=user["id"],
+                    conversation_id=conversation_id,
+                    limit=settings.MESSAGE_HISTORY_LIMIT,
+                )
+        except Exception as db_error:
+            print(f"Database error: {db_error}")
+            # Continue without history if there's a database error
+            user = None
+            history = []
 
         # Format history as structured data for the template
         conversation_history = []
         if history:
-            for msg in reversed(history):  # Oldest first
+            # history is now already in pairs format
+            for msg_pair in history:
                 conversation_history.append(
                     {
-                        "user": msg["user_message"],
-                        "assistant": msg["assistant_response"],
+                        "user": msg_pair.get("user_message", ""),
+                        "assistant": msg_pair.get("assistant_response", ""),
                     }
                 )
 
@@ -139,22 +153,26 @@ async def chat(
             },
         )
 
-        # print(agent.prompt_templates["planning"])
-
         # Then run the agent with the formatted message
         response_content = agent.run(formatted_message)
 
         # Store message and response in database
-        supabase.add_message_to_history(
-            platform=platform,
-            platform_user_id=platform_user_id,
-            message_content=content,
-            response_content=response_content,
-            conversation_id=conversation_id,
-        )
+        try:
+            if user:  # Only store if we have a valid user
+                supabase.add_message_to_history(
+                    platform=platform,
+                    platform_user_id=platform_user_id,
+                    message_content=content,
+                    response_content=response_content,
+                    conversation_id=conversation_id,
+                )
+        except Exception as store_error:
+            print(f"Error storing message history: {store_error}")
+            # Continue without storing the message if there's an error
 
         return Response(
             content=response_content, conversation_id=conversation_id
         )
     except Exception as e:
+        print(f"Error in chat endpoint: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
